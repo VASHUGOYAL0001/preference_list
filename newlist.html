@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Choice Filling Management System</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #2980b9;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --bg: #f5f6fa;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: var(--primary); text-align: center; margin-top: 0; font-size: 28px; }
+        .description { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
+        
+        /* Control Panel */
+        .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 15px; background: #eaeded; border-radius: 8px; }
+        .search-box { flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { cursor: pointer; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; transition: all 0.2s ease; }
+        .btn-pdf { background-color: var(--accent); color: white; }
+        .btn-pdf:hover { background-color: #1f6391; }
+        .btn-reset { background-color: #e74c3c; color: white; }
+        .btn-reset:hover { background-color: #c0392b; }
+        .btn-history { background-color: #34495e; color: white; }
+        .btn-history:hover:not(:disabled) { background-color: #2c3e50; }
+        .btn-history:disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        /* Table Layout */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: var(--secondary); color: white; padding: 14px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
+        td { padding: 10px 14px; border-bottom: 1px solid #e0e0e0; font-size: 15px; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        tr:hover { background-color: #f1f2f6; }
+        
+        .rank-col { width: 7%; font-weight: bold; color: var(--accent); text-align: center; font-size: 16px; }
+        .inst-col { width: 40%; font-weight: 500; }
+        .branch-col { width: 35%; color: #555; }
+        .action-col { width: 18%; text-align: center; }
+        
+        /* Action buttons layout rules */
+        .action-flex { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-arrow { background-color: #e7e7e7; color: #333; padding: 6px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
+        .btn-arrow:hover:not(:disabled) { background-color: #bdc3c7; }
+        .btn-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .rank-input { width: 52px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; }
+        .btn-move { background-color: var(--success); color: white; padding: 6px 10px; font-size: 12px; border-radius: 4px; }
+        .btn-move:hover { background-color: #219653; }
+
+        /* Status block decoration */
+        .status-badge { background-color: #d4edda; color: #155724; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: 500; display: inline-block; }
+
+        /* PRINT / PDF STYLING AUTOMATION */
+        @media print {
+            body { background-color: white; color: black; margin: 0; padding: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .controls, .action-col, th:last-child, td:last-child, .description { display: none !important; }
+            h1 { font-size: 22px; margin-bottom: 20px; text-align: center; }
+            table { width: 100%; page-break-inside: auto; border: 1px solid #999; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+            th { background-color: #333 !important; color: white !important; font-size: 12px; padding: 8px; border: 1px solid #999; text-transform: uppercase; }
+            td { font-size: 11px; padding: 7px; border: 1px solid #ddd; }
+            .rank-col { color: black !important; font-size: 12px; border-right: 1px solid #999; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Dynamic Choice Filling Preference Management System</h1>
+    <div class="description">
+        Type an <b>Integer</b> (e.g. 2) to <b>Replace/Swap</b> positions. Type a <b>Decimal</b> (e.g. 1.5) to <b>Insert Between</b> preferences and push items down. Use Arrows for single steps. Clear mistakes with Undo/Redo.
+    </div>
+
+    <div class="controls">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Filter list dynamically by Institute or Specialization (e.g. Ranchi, Surathkal, CSE)..." oninput="filterTable()">
+        <div class="btn-group">
+            <button id="undoBtn" class="btn-history" onclick="undoAction()">↩ Undo</button>
+            <button id="redoBtn" class="btn-history" onclick="redoAction()">↪ Redo</button>
+            <button class="btn-reset" onclick="resetToDefault()">Reset Order</button>
+            <button class="btn-pdf" onclick="window.print()">📥 Save Layout as PDF</button>
+        </div>
+    </div>
+
+    <table id="choiceTable">
+        <thead>
+            <tr>
+                <th style="text-align: center;">Preference No.</th>
+                <th>Institute Name</th>
+                <th>Branch Name & Course Track</th>
+                <th class="action-col">Modify Rank</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    const defaultChoices = [
+        {inst: "National Institute of Technology, Tiruchirappalli", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Karnataka, Surathkal", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Warangal", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Karnataka, Surathkal", branch: "Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Karnataka, Surathkal", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Warangal", branch: "Computer Science and Engineering (Artificial Intelligence & Data Science) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Rourkela", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Karnataka, Surathkal", branch: "Computational and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Motilal Nehru National Institute of Technology Allahabad", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Warangal", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Rourkela", branch: "Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Malaviya National Institute of Technology Jaipur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Calicut", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Allahabad", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Allahabad", branch: "Information Technology-Business Informatics (4 Years, Bachelor of Technology)"},
+        {inst: "Malaviya National Institute of Technology Jaipur", branch: "Artificial Intelligence and Data Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Visvesvaraya National Institute of Technology, Nagpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Sardar Vallabhbhai National Institute of Technology, Surat", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Jamshedpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Delhi", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Allahabad", branch: "Information Technology (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Indian Institute of Information Technology, Allahabad", branch: "B. Tech. Information Technology-Business Informatics (IT- Bin) - Master of Business Administration (MBA) (5 Years, Bachelor of Technology and MBA (Dual Degree))"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Artificial Intelligence and Machine Learning (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Durgapur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Maulana Azad National Institute of Technology Bhopal", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Atal Bihari Vajpayee Indian Institute of Information Technology & Management Gwalior", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Delhi", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Sardar Vallabhbhai National Institute of Technology, Surat", branch: "Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Kurukshetra", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Lucknow", branch: "Computer Science and Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Lucknow", branch: "Computer Science (4 Years, Bachelor of Technology)"},
+        {inst: "Dr. BR Ambedkar National Institute of Technology, Jalandhar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Sardar Vallabhbhai National Institute of Technology, Surat", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Durgapur", branch: "B.Tech in Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Atal Bihari Vajpayee Indian Institute of Information Technology & Management Gwalior", branch: "Mathematics and Scientific Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Sardar Vallabhbhai National Institute of Technology, Surat", branch: "Artificial Intelligence (5 Years, Integrated B. Tech. and M. Tech.)"},
+        {inst: "Indian Institute of Information Technology Lucknow", branch: "Computer Science and Business (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Lucknow", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Hamirpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Silchar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Goa", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Raipur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Atal Bihari Vajpayee Indian Institute of Information Technology & Management Gwalior", branch: "Integrated B. Tech. (IT) and M. Tech (IT) (5 Years, Integrated B. Tech. and M. Tech.)"},
+        {inst: "Dr. BR Ambedkar National Institute of Technology, Jalandhar", branch: "Data Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Dr. BR Ambedkar National Institute of Technology, Jalandhar", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Patna", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Hamirpur", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Maulana Azad National Institute of Technology Bhopal", branch: "Mathematics and Data Science (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Pt. Dwarka Prasad Mishra Indian Institute of Information Technology, Design & Manufacture Jabalpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Engineering Science and Technology, Shibpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Dr. BR Ambedkar National Institute of Technology, Jalandhar", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Raipur", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Patna", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Patna", branch: "Computer Science and Engineering with Specialization in Data Science (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "National Institute of Technology Hamirpur", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Patna", branch: "Mathematics and Computing Technology (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "National Institute of Technology Patna", branch: "Computer Science and Engineering with Specialization in Cyber Security (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Atal Bihari Vajpayee Indian Institute of Information Technology & Management Gwalior", branch: "Integrated B. Tech. (IT) and MBA (5 Years, Integrated B. Tech. and MBA)"},
+        {inst: "Punjab Engineering College, Chandigarh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Punjab Engineering College, Chandigarh", branch: "Computer Science Engineering (Artificial Intelligence) (4 Years, B. Tech/B. Tech (Hons.))"},
+        {inst: "Indian Institute of Engineering Science and Technology, Shibpur", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Punjab Engineering College, Chandigarh", branch: "Computer Science Engineering (Data Science) (4 Years, B. Tech/B. Tech (Hons.))"},
+        {inst: "National Institute of Technology, Andhra Pradesh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Puducherry", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Design & Manufacturing, Kancheepuram", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Design & Manufacturing, Kancheepuram", branch: "Computer Science and Engineering with Major in Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Pune", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "International Institute of Information Technology, Naya Raipur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Uttarakhand", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Agartala", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Meghalaya", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Punjab Engineering College, Chandigarh", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "International Institute of Information Technology, Naya Raipur", branch: "Data Science and Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Mesra, Ranchi", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Mesra, Ranchi", branch: "Artificial Intelligence and Machine Learning (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Guwahati", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Vadodara, Gujarat", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Mesra, Ranchi", branch: "Computer Science and Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Pune", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Pune", branch: "Cyber Security (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Design & Manufacturing, Kancheepuram", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "National Institute of Technology, Srinagar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kota, Rajasthan", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT), Vadodara, Gujarat", branch: "Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Vadodara, Gujarat", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kota, Rajasthan", branch: "Artificial Intelligence and Data Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Vadodara, Gujarat", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Vadodara, Gujarat", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Srinagar", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Nagpur", branch: "Computer Science Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Nagpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Nagpur", branch: "Computer Science Engineering (Data Science and Analytics) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Sri City, Chittoor", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT), Sri City, Chittoor", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Computer Science and Engineering (Artificial Intelligence) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Computer Science and Engineering (Data Science) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Surat", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Surat", branch: "Computer Science and Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Sikkim", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Una, Himachal Pradesh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Nagpur", branch: "Computer Science Engineering (Human Computer Interaction and Gaming Technology) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Computer Science and Engineering (Cyber Physical System) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Surat", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Una, Himachal Pradesh", branch: "Computer Science and Engineering (Data Science) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Una, Himachal Pradesh", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Tiruchirappalli", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Tiruchirappalli", branch: "Computer Science and Engineering (Artificial Intelligence & Data Science) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kilohrad, Sonepat, Haryana", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "International Institute of Information Technology, Bhubaneswar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kilohrad, Sonepat, Haryana", branch: "CSE (Data Science & Analytics) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kilohrad, Sonepat, Haryana", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhopal", branch: "B.Tech in Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Sikkim", branch: "Artificial Intelligence and Machine Learning (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Ranchi", branch: "Computer Science and Engineering (with Specialization of Data Science and Artificial Intelligence) (4 Years, B. Tech / B. Tech (Hons.))"},
+        {inst: "Indian Institute of Information Technology (IIIT) Ranchi", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT) Kilohrad, Sonepat, Haryana", branch: "Computer Science & Engineering (Data Science and Analytics) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT) Kilohrad, Sonepat, Haryana.", branch: "Computer Science and Engineering (Artificial Intelligence) (4 Years, Bachelor of Technology)"},
+        {inst: "Jawaharlal Nehru University, Delhi", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Arunachal Pradesh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Ranchi", branch: "B.Tech in Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Design & Manufacturing Kurnool, Andhra Pradesh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT) Kottayam", branch: "Computer Science and Engineering with specialization in Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kottayam", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "International Institute of Information Technology, Bhubaneswar", branch: "Computer Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "International Institute of Information Technology, Bhubaneswar", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Guwahati", branch: "Electronics Communication and Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT) Kottayam", branch: "Computer Science and Engineering with specialization in Cyber Security (4 Years, Bachelor of Technology)"},
+        {inst: "University of Hyderabad", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Indian Institute of Information Technology, Vadodara International Campus Diu (IIITVICD)", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian institute of information technology, Raichur, Karnataka", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology(IIIT) Dharwad", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Vadodara International Campus Diu (IIITVICD)", branch: "Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology, Vadodara International Campus Diu (IIITVICD)", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Manipur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Mizoram", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology Nagaland", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Design & Manufacturing Kurnool, Andhra Pradesh", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Design & Manufacturing Kurnool, Andhra Pradesh", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "National Institute of Technology Agartala", branch: "Computational Mathematics (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "National Institute of Technology Agartala", branch: "Mathematics & Computing (5 Years, Bachelor of Science and Master of Science (Dual Degree))"},
+        {inst: "Indian Institute of Information Technology Bhagalpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian institute of information technology, Raichur, Karnataka", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of information Technology(IIIT) Dharwad", branch: "Data Science and Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technology, Mizoram", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian institute of information technology, Raichur, Karnataka", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Bhagalpur", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology Design & Manufacturing Kurnool, Andhra Pradesh", branch: "Artificial Intelligence and Data Science (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Indian Institute of information Technology, Agartala", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Shri G. S. Institute of Technology and Science Indore", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Shri G. S. Institute of Technology and Science Indore", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of information Technology(IIIT) Kalyani, West Bengal", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of Information Technology (IIIT) Kalyani, West Bengal", branch: "Computer Science and Engineering (Artificial Intelligence & Data Science) (4 Years, Bachelor of Technology)"},
+        {inst: "Indian Institute of information Technology(IIIT) Kalyani, West Bengal", branch: "Computer Science and Engineering (Cyber Security) (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Mesra, Ranchi", branch: "Mathematics and Computing (5 Years, Integrated Master of Science)"},
+        {inst: "Birla Institute of Technology, Mesra, Ranchi", branch: "Quantitative Economics & Data Science (5 Years, Integrated Master of Science)"},
+        {inst: "Institute of Infrastructure, Technology, Research and Management-Ahmedabad", branch: "Computer Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY SENAPATI MANIPUR", branch: "Computer Science and Engineering with specialization in Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY SENAPATI MANIPUR", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY SENAPATI MANIPUR", branch: "Computer Science and Engineering with specialization in Quantum Technologies (4 Years, Bachelor of Technology)"},
+        {inst: "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY SENΑΡΑΤΙ MANIPUR", branch: "Computer Science and Engineering with specialization in Cyber Security (4 Years, Bachelor of Technology)"},
+        {inst: "J.K. Institute of Applied Physics & Technology, Department of Electronics & Communication, University of Allahabad- Allahabad", branch: "Computer Science and Engineering with Major in Artificial Intelligence (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Patna Off-Campus", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Patna Off-Campus", branch: "Artificial Intelligence and Machine Learning (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Patna Off-Campus", branch: "Computer Science and Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Rajasthan, Rajasthan", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Sant Longowal Institute of Engineering and Technology", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Sant Longowal Institute of Engineering and Technology", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Gati Shakti Vishwavidyalaya, Vadodara", branch: "B.Tech in Artificial Intelligence and Data Science (Transportation and Logistics) (4 Years, Bachelor of Technology)"},
+        {inst: "Puducherry Technological University, Puducherry", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Puducherry Technological University, Puducherry", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Puducherry Technological University, Puducherry", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Deoghar Off-Campus", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Shri Mata Vaishno Devi University, Katra, Jammu & Kashmir", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Advanced Manufacturing Technology, Ranchi", branch: "Computer Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Birla Institute of Technology, Patna Off-Campus", branch: "Mathematics and Computing (5 Years, Integrated Master of Science)"},
+        {inst: "Shri Mata Vaishno Devi University, Katra, Jammu & Kashmir", branch: "B.Tech in Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Haryana", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Aurangabad (Maharashtra)", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Ropar (Punjab)", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Patna (Bihar)", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Gorakhpur (UP)", branch: "Computer Science and Engineering with minor in AI and ML (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Ajmer (Rajasthan)", branch: "Computer Science and Engineering (Internet of Things, Cyber Security including Block Chain Technology) (4 Years, Bachelor of Technology)"},
+        {inst: "School of Studies of Engineering and Technology, Guru Ghasidas Vishwavidyalaya, Bilaspur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "School of Studies of Engineering and Technology, Guru Ghasidas Vishwavidyalaya, Bilaspur", branch: "Artificial Intelligence and Data Science (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Jammu", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Jammu", branch: "Computer Science and Engineering with specialization in Cyber Security (4 Years, Bachelor of Technology)"},
+        {inst: "Chhattisgarh Swami Vivekananda Technical University, Bhilai (CSVTU Bhilai)", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Chhattisgarh Swami Vivekananda Technical University, Bhilai (CSVTU Bhilai)", branch: "Computer Science Engineering (Artificial Intelligence) (4 Years, B. Tech / B. Tech (Hons.))"},
+        {inst: "Chhattisgarh Swami Vivekananda Technical University, Bhilai (CSVTU Bhilai)", branch: "Computer Science Engineering (Data Science) (4 Years, B. Tech / B. Tech (Hons.))"},
+        {inst: "Central University of Jammu", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "School of Studies of Engineering and Technology, Guru Ghasidas Vishwavidyalaya, Bilaspur", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "School of Engineering, Tezpur University, Napaam, Tezpur", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Assam University, Silchar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Ghani Khan Choudhary Institute of Engineering and Technology, Malda, West Bengal", branch: "Computer Science Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "Sant Longowal Institute of Engineering and Technology", branch: "Computer Science and Engineering (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "School of Engineering, Tezpur University, Napaam, Tezpur", branch: "B.Tech. (Computer Science and Engineering) - MBA (5 Years, Bachelor of Technology and MBA (Dual Degree))"},
+        {inst: "Shri Mata Vaishno Devi University, Katra, Jammu & Kashmir", branch: "Robotics and AI (4 Years, Bachelor of Technology)"},
+        {inst: "Institute of Engineering and Technology, Dr. H. S. Gour University, Sagar (A Central University)", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Gurukula Kangri Vishwavidyalaya, Haridwar", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Rajiv Gandhi National Aviation University, Fursatganj, Amethi (UP)", branch: "Artificial Intelligence & Data Science - Aviation Systems (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Advanced Manufacturing Technology, Ranchi", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "CU Jharkhand", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Central institute of Technology Kokrajar, Assam", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Calicut", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Aizawl", branch: "Internet of Things (IoT) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Kohima", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Aizawl", branch: "Computer Science and Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Imphal", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Agartala", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Electronics and Information Technology, Srinagar", branch: "B.Tech in CSE (AI and ML) (4 Years, Bachelor of Technology)"},
+        {inst: "University of Hyderabad", branch: "Computer Science and Engineering (5 Years, Integrated Master of Technology)"},
+        {inst: "Central University of Punjab, Bathinda", branch: "Artificial Intelligence and Machine Learning (5 Years, Bachelor and Master of Technology (Dual Degree))"},
+        {inst: "Central University of Punjab, Bathinda", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Karnataka", branch: "Mathematics and Computing (4 Years, Bachelor of Technology)"},
+        {inst: "Central University of Karnataka", branch: "Computer Science and Engineering (Artificial Intelligence and Machine Learning) (4 Years, Bachelor of Technology)"},
+        {inst: "North Eastern Regional Institute of Science and Technology, Nirjuli (Itanagar), Arunachal Pradesh", branch: "Computer Science and Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Mizoram University, Aizawl", branch: "Computer Engineering (4 Years, Bachelor of Technology)"},
+        {inst: "Mizoram University, Aizawl", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "North-Eastern Hill University, Shillong", branch: "Information Technology (4 Years, Bachelor of Technology)"},
+        {inst: "National Institute of Technical Teachers Training and Research Bhopal", branch: "Artificial Intelligence and Machine Learning (4 Years, Bachelor of Technology)"}
+    ];
+
+    let currentChoices = [];
+    let undoStack = [];
+    let redoStack = [];
+
+    function initData() {
+        const stored = localStorage.getItem('user_choice_filling_order');
+        if (stored) {
+            currentChoices = JSON.parse(stored);
+        } else {
+            currentChoices = JSON.parse(JSON.stringify(defaultChoices));
+        }
+        renderTable();
+        updateHistoryButtons();
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        const filterVal = document.getElementById('searchBar').value.toLowerCase();
+
+        currentChoices.forEach((item, index) => {
+            const row = document.createElement('tr');
+            
+            const isMatch = item.inst.toLowerCase().includes(filterVal) || item.branch.toLowerCase().includes(filterVal);
+            if (filterVal && !isMatch) {
+                row.style.display = "none";
+            }
+
+            row.innerHTML = `
+                <td class="rank-col">${index + 1}</td>
+                <td class="inst-col">${item.inst}</td>
+                <td class="branch-col">${item.branch}</td>
+                <td class="action-col">
+                    <div class="action-flex">
+                        <button class="btn-arrow" title="Move Up" onclick="moveStep(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+                        <button class="btn-arrow" title="Move Down" onclick="moveStep(${index}, 1)" ${index === currentChoices.length - 1 ? 'disabled' : ''}>▼</button>
+                        <input type="number" step="any" class="rank-input" min="1" max="${currentChoices.length}" value="${index + 1}" id="input-${index}" onkeydown="handleKey(event, ${index})">
+                        <button class="btn-move" onclick="processAbsoluteMove(${index})">Move</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+        localStorage.setItem('user_choice_filling_order', JSON.stringify(currentChoices));
+    }
+
+    // Save state helper for tracking history changes
+    function pushToUndoHistory() {
+        undoStack.push(JSON.stringify(currentChoices));
+        redoStack = []; // Clear redo on any new active manipulation
+        updateHistoryButtons();
+    }
+
+    function updateHistoryButtons() {
+        document.getElementById('undoBtn').disabled = (undoStack.length === 0);
+        document.getElementById('redoBtn').disabled = (redoStack.length === 0);
+    }
+
+    function undoAction() {
+        if (undoStack.length === 0) return;
+        redoStack.push(JSON.stringify(currentChoices));
+        currentChoices = JSON.parse(undoStack.pop());
+        renderTable();
+        updateHistoryButtons();
+    }
+
+    function redoAction() {
+        if (redoStack.length === 0) return;
+        undoStack.push(JSON.stringify(currentChoices));
+        currentChoices = JSON.parse(redoStack.pop());
+        renderTable();
+        updateHistoryButtons();
+    }
+
+    // Single step movement rules via arrows
+    function moveStep(currentIndex, direction) {
+        const targetIndex = currentIndex + direction;
+        if (targetIndex < 0 || targetIndex >= currentChoices.length) return;
+
+        pushToUndoHistory();
+
+        const temp = currentChoices[currentIndex];
+        currentChoices[currentIndex] = currentChoices[targetIndex];
+        currentChoices[targetIndex] = temp;
+
+        renderTable();
+    }
+
+    // Dual Mode Logic Engine
+    function processAbsoluteMove(currentIndex) {
+        const inputElement = document.getElementById(`input-${currentIndex}`);
+        const rawValue = parseFloat(inputElement.value);
+
+        if (isNaN(rawValue) || rawValue < 1 || rawValue > currentChoices.length) {
+            alert(`Please input a valid target location between 1 and ${currentChoices.length}`);
+            inputElement.value = currentIndex + 1;
+            return;
+        }
+
+        pushToUndoHistory();
+
+        // Mode 1: Pure Integer parsed values execute traditional Replacement/Swap
+        if (Number.isInteger(rawValue)) {
+            const targetIndex = rawValue - 1;
+            const temp = currentChoices[currentIndex];
+            currentChoices[currentIndex] = currentChoices[targetIndex];
+            currentChoices[targetIndex] = temp;
+        } 
+        // Mode 2: Floating/Decimal parsed values execute clean Insertion-Between logic
+        else {
+            const targetIndex = Math.ceil(rawValue) - 1;
+            const [itemToMove] = currentChoices.splice(currentIndex, 1);
+            currentChoices.splice(targetIndex, 0, itemToMove);
+        }
+
+        renderTable();
+    }
+
+    function handleKey(event, index) {
+        if (event.key === 'Enter') {
+            processAbsoluteMove(index);
+        }
+    }
+
+    function filterTable() {
+        const searchVal = document.getElementById('searchBar').value.toLowerCase();
+        const rows = document.getElementById('tableBody').getElementsByTagName('tr');
+
+        for (let i = 0; i < rows.length; i++) {
+            const instText = rows[i].getElementsByTagName('td')[1].innerText.toLowerCase();
+            const branchText = rows[i].getElementsByTagName('td')[2].innerText.toLowerCase();
+
+            if (instText.includes(searchVal) || branchText.includes(searchVal)) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+
+    function resetToDefault() {
+        if (confirm("Reset layout sorting order back to system defaults? This records a history snapshot.")) {
+            pushToUndoHistory();
+            localStorage.removeItem('user_choice_filling_order');
+            document.getElementById('searchBar').value = '';
+            initData();
+        }
+    }
+
+    window.onload = initData;
+</script>
+</body>
+</html>
