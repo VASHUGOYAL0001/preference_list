@@ -10,82 +10,121 @@
             --secondary: #34495e;
             --accent: #2980b9;
             --success: #27ae60;
-            --danger: #c0392b;
+            --danger: #e74c3c;
             --bg: #f5f6fa;
             --card-bg: #ffffff;
             --text: #333333;
             --muted-text: #7f8c8d;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; background: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h1 { color: var(--primary); text-align: center; margin-top: 0; font-size: 26px; }
-        .description { text-align: center; color: var(--muted-text); font-size: 13px; margin-bottom: 25px; line-height: 1.5; }
         
-        /* Control Panel */
-        .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 15px; background: #eaeded; border-radius: 8px; }
-        .search-box { flex: 1; min-width: 250px; padding: 10px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        button { cursor: pointer; padding: 10px 16px; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; transition: all 0.2s ease; }
+        /* Global sizing fix */
+        * { box-sizing: border-box; }
+        
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; padding: 10px; }
+        @media (min-width: 768px) { body { padding: 20px; } }
+        
+        .container { max-width: 1300px; margin: 0 auto; background: var(--card-bg); padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        @media (min-width: 768px) { .container { padding: 30px; } }
+        
+        h1 { color: var(--primary); text-align: center; margin-top: 0; font-size: 22px; }
+        @media (min-width: 768px) { h1 { font-size: 26px; } }
+        
+        .description { text-align: center; color: var(--muted-text); font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+        
+        /* Control Panel Layout */
+        .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; padding: 15px; background: #eaeded; border-radius: 8px; }
+        @media (min-width: 768px) { .controls { flex-direction: row; align-items: center; justify-content: space-between; } }
+        
+        .search-box { width: 100%; padding: 10px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        @media (min-width: 768px) { .search-box { flex: 1; } }
+        
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; justify-content: center; }
+        @media (min-width: 768px) { .btn-group { width: auto; justify-content: flex-end; } }
+        
+        button { cursor: pointer; padding: 10px 14px; border: none; border-radius: 6px; font-weight: 600; font-size: 13px; transition: all 0.2s ease; white-space: nowrap; }
         .btn-pdf { background-color: var(--accent); color: white; }
         .btn-pdf:hover { background-color: #1f6391; }
-        .btn-reset { background-color: #e74c3c; color: white; }
-        .btn-reset:hover { background-color: #doc392b; }
+        .btn-reset { background-color: var(--danger); color: white; }
+        .btn-reset:hover { background-color: #c0392b; }
         .btn-history { background-color: #34495e; color: white; }
         .btn-history:hover:not(:disabled) { background-color: #2c3e50; }
         .btn-history:disabled { opacity: 0.4; cursor: not-allowed; }
         
-        /* Table Layout */
+        /* Table Layout (Desktop View) */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: fixed; }
         th { background-color: var(--secondary); color: white; padding: 12px 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; }
-        td { padding: 10px; border-bottom: 1px solid #e0e0e0; font-size: 14px; word-wrap: break-word; }
+        td { padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-size: 14px; word-wrap: break-word; }
         tr:nth-child(even) { background-color: #f8f9fa; }
         tr:hover { background-color: #f1f2f6; }
         
-        /* Fixed Column Width Allocations to prevent crowding */
+        /* Desktop Width Rules */
         .w-pref { width: 5%; text-align: center; font-weight: bold; color: var(--accent); font-size: 15px; }
         .w-inst { width: 28%; font-weight: 500; }
         .w-branch { width: 27%; color: #555; }
         .w-stat { width: 9%; color: #444; font-weight: 600; font-size: 13px; }
         .w-action { width: 13%; text-align: center; }
         
-        /* Action Elements styling */
-        .action-flex { display: flex; align-items: center; justify-content: center; gap: 3px; }
-        .btn-arrow { background-color: #e7e7e7; color: #333; padding: 5px 8px; font-size: 11px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
+        .action-flex { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; }
+        .btn-arrow { background-color: #e7e7e7; color: #333; padding: 6px 10px; font-size: 12px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
         .btn-arrow:hover:not(:disabled) { background-color: #bdc3c7; }
         .btn-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
         
-        .rank-input { width: 44px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; font-size: 13px; }
-        .btn-move { background-color: var(--success); color: white; padding: 5px 8px; font-size: 11px; border-radius: 4px; }
+        .rank-input { width: 52px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; font-weight: bold; font-size: 14px; -moz-appearance: textfield; }
+        .rank-input::-webkit-outer-spin-button, .rank-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .btn-move { background-color: var(--success); color: white; padding: 6px 10px; font-size: 12px; border-radius: 4px; }
         .btn-move:hover { background-color: #219653; }
 
-        /* PRINT / PDF AUTOMATION STYLES */
+        /* MOBILE RESPONSIVE ADAPTATION (Screens smaller than 768px) */
+        @media (max-width: 767px) {
+            table, thead, tbody, th, td, tr { display: block; width: 100% !important; table-layout: auto; }
+            thead { position: absolute; top: -9999px; left: -9999px; } /* Hide headers without destroying structure */
+            
+            tr { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; padding: 10px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+            td { border: none; border-bottom: 1px dashed #eee; position: relative; padding: 10px 10px 10px 40% !important; text-align: left !important; font-size: 13px; min-height: 38px; }
+            td:last-child { border-bottom: none; padding-top: 15px !important; }
+            
+            /* Inject semantic text labels dynamically before content value blocks */
+            td::before { content: attr(data-label); position: absolute; top: 10px; left: 10px; width: 35%; padding-right: 10px; white-space: nowrap; font-weight: bold; color: var(--secondary); font-size: 11px; text-transform: uppercase; }
+            
+            .w-pref { font-size: 15px; color: var(--accent); }
+            .action-flex { justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+            .rank-input { width: 60px; padding: 6px; }
+            .btn-arrow { padding: 8px 12px; }
+            .btn-move { padding: 8px 12px; }
+        }
+
+        /* PRINT / PDF STYLING AUTOMATION */
         @media print {
             body { background-color: white; color: black; margin: 0; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; }
             .controls, .w-action, th:last-child, td:last-child, .description { display: none !important; }
             h1 { font-size: 20px; margin-bottom: 15px; text-align: center; }
-            table { width: 100%; page-break-inside: auto; border: 1px solid #666; table-layout: fixed; }
-            tr { page-break-inside: avoid; page-break-after: auto; }
-            th { background-color: #333 !important; color: white !important; font-size: 11px; padding: 6px; border: 1px solid #666; text-transform: uppercase; }
-            td { font-size: 10px; padding: 6px; border: 1px solid #ddd; }
-            .w-pref { color: black !important; font-size: 11px; border-right: 1px solid #666; text-align: center; }
-            .w-inst { width: 33%; }
-            .w-branch { width: 33%; }
-            .w-stat { width: 11%; }
+            table { width: 100% !important; display: table !important; border: 1px solid #666; table-layout: fixed !important; }
+            thead { display: table-header-group !important; position: static !important; }
+            tbody { display: table-row-group !important; }
+            tr { display: table-row !important; page-break-inside: avoid; page-break-after: auto; border: none; box-shadow: none; padding: 0; margin: 0; }
+            td, th { display: table-cell !important; font-size: 10px; padding: 6px; border: none; border-bottom: 1px solid #ddd; }
+            th { background-color: #333 !important; color: white !important; text-transform: uppercase; border: 1px solid #666; }
+            td::before { display: none !important; }
+            .w-pref { display: table-cell !important; width: 6% !important; color: black !important; font-size: 11px; border-right: 1px solid #666; text-align: center; }
+            .w-inst { width: 32% !important; }
+            .w-branch { width: 32% !important; }
+            .w-stat { width: 10% !important; display: table-cell !important; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>Choice Filling Preference Management System (with Cutoffs & Placement Stats)</h1>
+    <h1>Choice Filling Preference Management System</h1>
     <div class="description">
-        Type an <b>Integer</b> (e.g., 2) to <b>Swap/Replace</b> positions. Type a <b>Decimal</b> (e.g., 1.5) to <b>Insert Between</b> preferences and push everything down.<br>
-        Use arrows for single increments. Changes auto-save securely to local storage.
+        Type an <b>Integer</b> (e.g. 2) to <b>Swap/Replace</b> positions. Type a <b>Decimal</b> (e.g. 1.5) to <b>Insert Between</b> preferences and displace lines down.<br>
+        Mobile layout turns rows into cards automatically. Use arrows to shift one step. Changes persistent.
     </div>
 
     <div class="controls">
-        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Live filter list by college, branch, cutoff, or package stats..." oninput="filterTable()">
+        <input type="text" id="searchBar" class="search-box" placeholder="🔍 Filter list dynamically by college, branch, cutoff, or package..." oninput="filterTable()">
         <div class="btn-group">
             <button id="undoBtn" class="btn-history" onclick="undoAction()">↩ Undo</button>
             <button id="redoBtn" class="btn-history" onclick="redoAction()">↪ Redo</button>
@@ -112,7 +151,6 @@
 </div>
 
 <script>
-    // 227 Master choice list. Data fields (avg, op, cl) are structured cleanly to allow easy manual source editing if needed.
     const defaultChoices = [
         {inst: "National Institute of Technology, Tiruchirappalli", branch: "Computer Science and Engineering (4 Years)", avg: "27.2 LPA", op: "1500", cl: "5200"},
         {inst: "National Institute of Technology Karnataka, Surathkal", branch: "Computer Science and Engineering (4 Years)", avg: "24.8 LPA", op: "1800", cl: "6100"},
@@ -240,8 +278,6 @@
         {inst: "Indian Institute of Information Technology (IIIT) Sonepat", branch: "Computer Science and Engineering (Artificial Intelligence) (4 Years)", avg: "11.2 LPA", op: "47600", cl: "36800"},
         {inst: "Jawaharlal Nehru University, Delhi", branch: "Computer Science and Engineering (4 Years)", avg: "11.0 LPA", op: "48000", cl: "33000"},
         {inst: "National Institute of Technology Arunachal Pradesh", branch: "Computer Science and Engineering (4 Years)", avg: "7.3 LPA", op: "48400", cl: "61000"},
-        
-        // Items 127 onwards - explicitly containing custom targets like IIIT Ranchi MnC
         {inst: "Indian Institute of Information Technology (IIIT) Ranchi", branch: "B.Tech in Mathematics and Computing (4 Years)", avg: "12.3 LPA", op: "48800", cl: "38500"},
         {inst: "IIIT Design & Manufacturing Kurnool, Andhra Pradesh", branch: "Computer Science and Engineering (4 Years)", avg: "10.5 LPA", op: "49200", cl: "39000"},
         {inst: "Indian Institute of Information Technology(IIIT) Kottayam", branch: "CSE with specialization in AI and Data Science (4 Years)", avg: "11.6 LPA", op: "49600", cl: "37800"},
@@ -273,7 +309,6 @@
         {inst: "Indian Institute of information Technology, Agartala", branch: "Computer Science and Engineering (4 Years)", avg: "11.4 LPA", op: "60000", cl: "42500"}
     ];
 
-    // Autopopulate remaining tracking elements 156 to 227 to build complete dataset seamlessly
     const fallbackColleges = [
         "Shri G. S. Institute Indore", "IIIT Kalyani West Bengal", "BIT Mesra Ranchi", "IIIT Senapati Manipur", 
         "University of Allahabad", "BIT Patna Off-Campus", "Central University of Rajasthan", "Sant Longowal Institute", 
@@ -326,13 +361,13 @@
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="w-pref">${index + 1}</td>
-                <td class="w-inst">${item.inst}</td>
-                <td class="w-branch">${item.branch}</td>
-                <td class="w-stat">${item.avg}</td>
-                <td class="w-stat">${item.op}</td>
-                <td class="w-stat">${item.cl}</td>
-                <td class="w-action">
+                <td class="w-pref" data-label="No.">${index + 1}</td>
+                <td class="w-inst" data-label="Institute">${item.inst}</td>
+                <td class="w-branch" data-label="Branch">${item.branch}</td>
+                <td class="w-stat" data-label="Avg Pkg">${item.avg}</td>
+                <td class="w-stat" data-label="Open Rank">${item.op}</td>
+                <td class="w-stat" data-label="Close Rank">${item.cl}</td>
+                <td class="w-action" data-label="Action">
                     <div class="action-flex">
                         <button class="btn-arrow" title="Move Up" onclick="moveStep(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
                         <button class="btn-arrow" title="Move Down" onclick="moveStep(${index}, 1)" ${index === currentChoices.length - 1 ? 'disabled' : ''}>▼</button>
@@ -389,21 +424,21 @@
         const rawValue = parseFloat(inputElement.value);
 
         if (isNaN(rawValue) || rawValue < 1 || rawValue > currentChoices.length) {
-            alert(`Please input a valid number assignment between 1 and ${currentChoices.length}`);
+            alert(`Please input a valid target preference rank between 1 and ${currentChoices.length}`);
             inputElement.value = currentIndex + 1;
             return;
         }
 
         pushToUndoHistory();
 
-        // Integer values execute Replace/Swap logic 
+        // Mode 1: Interchanging Swap rule executed for exact Whole Integers
         if (Number.isInteger(rawValue)) {
             const targetIndex = rawValue - 1;
             const temp = currentChoices[currentIndex];
             currentChoices[currentIndex] = currentChoices[targetIndex];
             currentChoices[targetIndex] = temp;
         } 
-        // Decimal values execute Insert-Between displacement logic
+        // Mode 2: Insert-between pushing cascade rule executed for Decimals
         else {
             const targetIndex = Math.ceil(rawValue) - 1;
             const [itemToMove] = currentChoices.splice(currentIndex, 1);
@@ -417,11 +452,11 @@
     }
 
     function filterTable() {
-        renderTable(); // Re-runs layout binding loop directly mapping displays to live criteria values
+        renderTable();
     }
 
     function resetToDefault() {
-        if (confirm("Reset current sequence back to original setups? History backup remains protected.")) {
+        if (confirm("Reset current sequence adjustments back to default layout settings? Undo backup will be logged.")) {
             pushToUndoHistory();
             localStorage.removeItem('user_choice_filling_order');
             document.getElementById('searchBar').value = '';
